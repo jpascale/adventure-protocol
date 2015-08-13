@@ -4,6 +4,8 @@ s = socket.socket()
 host = socket.gethostname()
 port = 8888
 
+print socket.gethostname()
+
 s.connect((host, port))
 print s.recv(1024)
 s.close
