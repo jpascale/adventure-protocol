@@ -1,4 +1,4 @@
 # adventure-protocol
-Python server-client using sockets
+Python threaded server-client protocol
 
 Adventure Protocol
