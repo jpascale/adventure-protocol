@@ -14,17 +14,17 @@ class SysSock():
 	connlist = list()
 
 	def start_threads(self):
-		print 'creando threads'
+		print 'DEBUG> Creando threads...'
 		self.conn_accept = ConnAccepterThread(self)
 		self.conn_accept.run()
-		print 'threads creados'
+		print 'DEBUG> Creando threads... LISTO!'
 
 	def __init__(self):
 		self.__sck_config()
 		self.__sck_listen()
 
 	def __sck_config(self):
-		#Create TCP/IP socket
+		#TODO: Create TCP/IP socket
 		self.socket = socket.socket()
 
 		self.host = socket.gethostname()
@@ -50,13 +50,18 @@ class Conn():
 		return self.get_sck().recv(BFF_DATA_SIZE)
 
 def __main():
-	print 'main'
+	print 'DEBUG> Iniciando Servidor...'
+	print 'DEBUG> Creando main socket...'
 	sys_sck = SysSock()
-	print 'sys sock creada'
+	print 'DEBUG> Creando main socket... LISTO!'
 	sys_sck.start_threads()
 
-	print 'while true'
+	print 'DEBUG> Servidor Iniciado!'
 	while True:
-		pass
+		inp = raw_input('Shell> ')
+		if inp == 'exit':
+			sys_sck.socket.close()
+			print 'DEBUG> Socket closed.'
+			exit(0)
 
 __main()

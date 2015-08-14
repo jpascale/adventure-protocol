@@ -14,7 +14,6 @@ class ConnAccepterThread():
 
 	def thread_conn_accept(self):
 		while True:
-			print "esperando coneccion"
 			addr = self.conn_accept()
 			print self.thread_name, '> Incoming connection from ', addr
 
