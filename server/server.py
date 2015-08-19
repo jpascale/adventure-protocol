@@ -1,19 +1,37 @@
 import socket
 import select
- 
+
+DEBUG = True
+
 def send_data_all (sck, message):
     '''Sends message to everyone excepting the master socket and the sender one'''
     for socket in CONNECTION_LIST:
         if socket != master_socket and socket != sck :
-            try :
-                socket.send(message)
-            except :
+            try:
+                send_data(socket, message)
+            except:
                 # broken connection
                 socket.close()
                 CONNECTION_LIST.remove(socket)
- 
+
+def send_data(sck, data):
+    try:
+        sck.send(data)
+    except:
+        sck.close()
+        CONNECTION_LIST.remove(sck)
+
+def protocol(socketindex, rdata):
+    key = rdata[0]
+
+    if key == '#':
+        rdata = rdata[1:]
+        if DEBUG:
+            print "DEBUG: \'#\' received.\n"
+        send_data_all(socketindex, rdata)
+
 if __name__ == "__main__":
-     
+    
     CONNECTION_LIST = []
     RECV_BUFFER = 4096
     PORT = 5000
@@ -46,7 +64,8 @@ if __name__ == "__main__":
                 try:
                     data = sock.recv(RECV_BUFFER)
                     if data:
-                        send_data_all(sock, "\r" + str(sock.getpeername()) + '> ' + data)                
+                        protocol(sock, data)
+                        #send_data_all(sock, "\r" + str(sock.getpeername()) + '> ' + data)                
                  
                 except:
                     send_data_all(sock, "Client (%s, %s) is offline." % addr)
