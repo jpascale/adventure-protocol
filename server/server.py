@@ -1,67 +1,58 @@
 import socket
 import select
-
-from srv_threads import ConnAccepterThread#, DataIncomeThread
-
-##TODO: CONFIG FILE
-SERVER_HOST_PORT = 8000
-
-BFF_DATA_SIZE = 1024 #1K buffer
-
-class SysSock():
-
-	scklist = list()
-	connlist = list()
-
-	def start_threads(self):
-		print 'DEBUG> Creando threads...'
-		self.conn_accept = ConnAccepterThread(self)
-		self.conn_accept.run()
-		print 'DEBUG> Creando threads... LISTO!'
-
-	def __init__(self):
-		self.__sck_config()
-		self.__sck_listen()
-
-	def __sck_config(self):
-		#TODO: Create TCP/IP socket
-		self.socket = socket.socket()
-
-		self.host = socket.gethostname()
-		self.port = SERVER_HOST_PORT
-		self.socket.bind((self.host, self.port))
-
-	def __sck_listen(self):
-		self.socket.listen(5)
-
-
-class Conn():
-	def __init__(self, sck, addr):
-		self.sck = sck
-		self.addr = addr 
-
-	def __str__(self):
-		return self.addr[0]
-
-	def get_sck(self):
-		return self.sck
-
-	def data_recv(self):
-		return self.get_sck().recv(BFF_DATA_SIZE)
-
-def __main():
-	print 'DEBUG> Iniciando Servidor...'
-	print 'DEBUG> Creando main socket...'
-	sys_sck = SysSock()
-	print 'DEBUG> Creando main socket... LISTO!'
-	sys_sck.start_threads()
-
-	print 'DEBUG> Servidor Iniciado!'
-	while True:
-		inp = raw_input('Shell> ')
-		if inp == 'exit':
-			sys_sck.socket.close()
-			print 'DEBUG> Socket closed.'
-			exit(0)
-
-__main()
+ 
+def send_data_all (sck, message):
+    '''Sends message to everyone excepting the master socket and the sender one'''
+    for socket in CONNECTION_LIST:
+        if socket != master_socket and socket != sck :
+            try :
+                socket.send(message)
+            except :
+                # broken connection
+                socket.close()
+                CONNECTION_LIST.remove(socket)
+ 
+if __name__ == "__main__":
+     
+    CONNECTION_LIST = []
+    RECV_BUFFER = 4096
+    PORT = 5000
+    
+    #Create TCP socket
+    master_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    master_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    master_socket.bind(("0.0.0.0", PORT))
+    master_socket.listen(10)
+ 
+    CONNECTION_LIST.append(master_socket)
+ 
+    print "Server started on port " + str(PORT)
+ 
+    while True:
+        read_sockets, write_sockets, error_sockets = select.select(CONNECTION_LIST,[],[])
+ 
+        for sock in read_sockets:
+            #Incoming connection
+            if sock == master_socket:
+                sockfd, addr = master_socket.accept()
+                CONNECTION_LIST.append(sockfd)
+                print "(%s, %s) connected" % addr
+                 
+                send_data_all(sockfd, "[%s:%s] connected\n" % addr)
+             
+            #Inconming message
+            else:
+                # Data recieved from client
+                try:
+                    data = sock.recv(RECV_BUFFER)
+                    if data:
+                        send_data_all(sock, "\r" + str(sock.getpeername()) + '> ' + data)                
+                 
+                except:
+                    send_data_all(sock, "Client (%s, %s) is offline." % addr)
+                    print "Client (%s, %s) is offline." % addr
+                    sock.close()
+                    CONNECTION_LIST.remove(sock)
+                    continue
+     
+    master_socket.close()
